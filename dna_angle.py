@@ -42,8 +42,8 @@ class PDBFile( object ):
   # Loads and parses the PDB file.
   def _LoadFromFile( self, filename, skip_water=False ):
     self.current_chain = 0
-    self.current_residue = -1
-    self.last_sequence = -1
+    self.current_residue = -sys.maxint - 1
+    self.last_sequence = -sys.maxint - 1
     file_handle = open( filename, "r" )
     lines = file_handle.readlines()
     self.residues = []
@@ -137,7 +137,7 @@ class DNAStructure( object ):
     # H-bonding description table.
     self.hbond_desc = {}
     self.hbond_desc["A"] = {}
-    self.hbond_desc["A"]["pair"] = "T"
+    self.hbond_desc["A"]["pair"] = [ "T", "BRU", "5IU", "8OG" ]
     self.hbond_desc["A"]["bond"] = []
     self.hbond_desc["A"]["bond"].append( ( "N6", "H61", "" ) )
     self.hbond_desc["A"]["bond"].append( ( "N6", "H62", "" ) )
@@ -145,7 +145,7 @@ class DNAStructure( object ):
     self.hbond_desc["A"]["bond"].append( ( "N3", "", "NC" ) )
     self.hbond_desc["A"]["bond"].append( ( "N7", "", "NB" ) )
     self.hbond_desc["G"] = {}
-    self.hbond_desc["G"]["pair"] = "C"
+    self.hbond_desc["G"]["pair"] = [ "C", "CX2" ]
     self.hbond_desc["G"]["bond"] = []
     self.hbond_desc["G"]["bond"].append( ( "N1", "H1", "" ) )
     self.hbond_desc["G"]["bond"].append( ( "N2", "H21", "" ) )
@@ -154,18 +154,47 @@ class DNAStructure( object ):
     self.hbond_desc["G"]["bond"].append( ( "N7", "", "NB" ) )
     self.hbond_desc["G"]["bond"].append( ( "O6", "", "O" ) )
     self.hbond_desc["T"] = {}
-    self.hbond_desc["T"]["pair"] = "A"
+    self.hbond_desc["T"]["pair"] = [ "A" ]
     self.hbond_desc["T"]["bond"] = []
     self.hbond_desc["T"]["bond"].append( ( "N3", "H3", "" ) )
     self.hbond_desc["T"]["bond"].append( ( "O2", "", "O" ) )
     self.hbond_desc["T"]["bond"].append( ( "O4", "", "O" ) )
     self.hbond_desc["C"] = {}
-    self.hbond_desc["C"]["pair"] = "G"
+    self.hbond_desc["C"]["pair"] = [ "G", "8OG" ]
     self.hbond_desc["C"]["bond"] = []
     self.hbond_desc["C"]["bond"].append( ( "N4", "H41", "" ) )
     self.hbond_desc["C"]["bond"].append( ( "N4", "H42", "" ) )
     self.hbond_desc["C"]["bond"].append( ( "O2", "", "O" ) )
     self.hbond_desc["C"]["bond"].append( ( "N3", "", "NC" ) )
+    self.hbond_desc["BRU"] = {}
+    self.hbond_desc["BRU"]["pair"] = [ "A" ]
+    self.hbond_desc["BRU"]["bond"] = []
+    self.hbond_desc["BRU"]["bond"].append( ( "N3", "H3", "" ) )
+    self.hbond_desc["BRU"]["bond"].append( ( "O2", "", "O" ) )
+    self.hbond_desc["BRU"]["bond"].append( ( "O4", "", "O" ) )
+    self.hbond_desc["5IU"] = {}
+    self.hbond_desc["5IU"]["pair"] = [ "A" ]
+    self.hbond_desc["5IU"]["bond"] = []
+    self.hbond_desc["5IU"]["bond"].append( ( "N3", "H3", "" ) )
+    self.hbond_desc["5IU"]["bond"].append( ( "O2", "", "O" ) )
+    self.hbond_desc["5IU"]["bond"].append( ( "O4", "", "O" ) )
+    self.hbond_desc["8OG"] = {}
+    self.hbond_desc["8OG"]["pair"] = [ "C", "A", "CX2" ]
+    self.hbond_desc["8OG"]["bond"] = []
+    self.hbond_desc["8OG"]["bond"].append( ( "N1", "H1", "" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "N2", "H21", "" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "N2", "H22", "" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "N3", "", "NC" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "N7", "", "NB" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "O6", "", "O" ) )
+    self.hbond_desc["8OG"]["bond"].append( ( "O8", "", "O" ) )
+    self.hbond_desc["CX2"] = {}
+    self.hbond_desc["CX2"]["pair"] = [ "G", "8OG" ]
+    self.hbond_desc["CX2"]["bond"] = []
+    self.hbond_desc["CX2"]["bond"].append( ( "N4", "H41", "" ) )
+    self.hbond_desc["CX2"]["bond"].append( ( "N4", "H42", "" ) )
+    self.hbond_desc["CX2"]["bond"].append( ( "O2", "", "O" ) )
+    self.hbond_desc["CX2"]["bond"].append( ( "N3", "", "NC" ) )
     # FF parameters table.
     self.ff_table = {}
     self.ff_table["O"] = [ 2.05, 2.5 ]
@@ -201,7 +230,8 @@ class DNAStructure( object ):
     # Do not allow more than 2 DNA chains in the structure. We probably can't
     # (don't know how to) figure out the correct double helix.
     if self.current_chain >= 2:
-      raise RuntimeError( "Too many DNA chains (%i)" % self.current_chain )
+      raise RuntimeError( \
+          "Too many DNA chains (%i)" % ( self.current_chain + 1 ) )
     if self.residues:
       self._FindComplementaryPairs()
 
@@ -216,7 +246,7 @@ class DNAStructure( object ):
 
   # Returns whether the name of the residue matches DNA residue.
   def _IsDNAResidue( self, residue_name ):
-    return self._ShortNameOfResidue( residue_name ) in ( "A", "C", "G", "T" )
+    return self._ShortNameOfResidue( residue_name ) in self.hbond_desc.keys()
 
   def _CalculateHBondEnergy( self, atx, ath, aty, ff_code ):
     k_hb_sigma2 = 0.018
@@ -258,7 +288,7 @@ class DNAStructure( object ):
       for other in self.residues:
         other_index = other["index"]
         # Ignore self and mismatches.
-        if other_index == index or other["short"] != desc["pair"]:
+        if other_index == index or other["short"] not in desc["pair"]:
           continue
         # Ignore direct neighbours.
         if abs( other_index - index ) < 2 and \
@@ -350,7 +380,8 @@ class PolynomialRegression( object ):
   # Constructor: verifies the input, assigns control points and calculates their mean.
   def __init__( self, poly_degree, control_points ):
     assert poly_degree >= 2, "Polynomial degree must be >= 2"
-    assert len( control_points ) >= 6, "Too few control points"
+    assert len( control_points ) >= 6, \
+        "Too few control points (%i)" % len( control_points )
     assert control_points.shape[1] == 3, "Control points must be Nx3"
     self.poly_degree = poly_degree
     self.poly_coeffs = np.zeros( poly_degree + 1 )
